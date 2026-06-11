@@ -2,44 +2,48 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-    <title>AR Bear Activity</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+    <title>AR Diagnostic Engine</title>
     
-    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://aframe.io/releases/1.6.0/aframe.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/mind-ar-js@1.2.5/dist/mindar-image-aframe.prod.js"></script>
     
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
-
     <style>
-        body {
+        body, html {
             margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
             overflow: hidden;
-            background-color: #000;
-            font-family: 'Fredoka', 'Comic Sans MS', sans-serif;
+            background-color: #111;
+            font-family: sans-serif;
         }
 
-        .game-container {
-            position: relative;
-            width: 100vw;
-            height: 56.25vw;
-            max-height: 100vh;
-            max-width: 177.78vh;
-            margin: auto;
-            top: 50%;
-            transform: translateY(-50%);
-            overflow: hidden;
+        #error-log {
+            position: fixed;
+            bottom: 10px;
+            left: 10px;
+            width: calc(100% - 40px);
+            max-height: 150px;
+            background: rgba(0, 0, 0, 0.85);
+            color: #ff4d4d;
+            padding: 10px;
+            font-family: monospace;
+            font-size: 11px;
+            border-radius: 8px;
+            overflow-y: auto;
+            z-index: 9999;
+            border: 1px solid #ff3333;
+            pointer-events: none;
         }
 
-        /* Splash Screen Button to trigger camera permissions */
-        #splash-screen {
+        #splash {
             position: fixed;
             top: 0;
             left: 0;
             width: 100%;
             height: 100%;
-            background-color: #FDFBF7;
+            background: #FDFBF7;
             display: flex;
             flex-direction: column;
             justify-content: center;
@@ -47,116 +51,97 @@
             z-index: 999;
         }
 
-        .start-btn {
-            background-color: #4A3728;
+        .btn {
+            background: #4A3728;
             color: white;
             border: none;
-            padding: 15px 40px;
-            font-size: 22px;
-            font-family: 'Fredoka', sans-serif;
-            font-weight: 600;
-            border-radius: 30px;
+            padding: 16px 36px;
+            font-size: 20px;
+            font-weight: bold;
+            border-radius: 50px;
             cursor: pointer;
-            box-shadow: 0 6px 0 #2A1F17;
-            transition: all 0.1s ease;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.2);
         }
 
-        .start-btn:active {
-            transform: translateY(4px);
-            box-shadow: 0 2px 0 #2A1F17;
+        /* 16:9 Screen Constraint Container */
+        .ar-viewport {
+            position: relative;
+            width: 100vw;
+            height: 56.25vw; 
+            max-height: 100vh;
+            max-width: 177.78vh;
+            margin: auto;
+            top: 50%;
+            transform: translateY(-50%);
         }
-
-        .ui-overlay {
-            position: absolute;
-            top: 20px;
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 10;
-            background: rgba(255, 255, 255, 0.9);
-            padding: 12px 24px;
-            border-radius: 15px;
-            border: 3px solid #4A3728;
-            text-align: center;
-            pointer-events: none;
-            display: none; /* Hidden until game starts */
-        }
-
-        #scanning-overlay {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0,0,0,0.4);
-            display: none; /* Hidden until game starts */
-            justify-content: center;
-            align-items: center;
-            z-index: 5;
-        }
-
-        .scan-box {
-            width: 60%;
-            height: 70%;
-            border: 4px dashed #FFF;
-            border-radius: 20px;
-        }
-
-        .mindar-ui-scanning { display: none !important; }
     </style>
 </head>
 <body>
 
-    <!-- Splash Screen to force browser permission -->
-    <div id="splash-screen">
-        <h1 style="color: #4A3728; margin-bottom: 30px;">Bear AR Game</h1>
-        <button class="start-btn" id="start-button">Start Camera</button>
+    <div id="error-log">System Log: Ready. Waiting for user interaction...</div>
+
+    <div id="splash">
+        <h2 style="color: #4A3728; margin-bottom: 20px;">AR Initialization</h2>
+        <button class="btn" id="startBtn">Launch Camera</button>
     </div>
 
-    <div class="game-container">
-        <div class="ui-overlay" id="instruction-card">
-            <h1 style="margin:0; font-size:24px; color:#4A3728;">Look for the Bear!</h1>
-        </div>
-
-        <div id="scanning-overlay"><div class="scan-box"></div></div>
-
-        <!-- Note: autoStart is set to false here -->
+    <div class="ar-viewport">
         <a-scene 
-            id="ar-scene"
-            mindar-image="imageTargetSrc: ./targets.mind; uiScanning: #scanning-overlay; autoStart: false;" 
+            id="scene"
+            mindar-image="imageTargetSrc: ./targets.mind; autoStart: false; uiScanning: no;" 
+            embedded
             color-space="sRGB" 
             renderer="colorManagement: true, physicallyCorrectLights" 
-            vr-mode-ui="enabled: false" 
-            device-orientation-permission-ui="enabled: false"
-            embedded>
+            vr-mode-ui="enabled: false"
+            device-orientation-permission-ui="enabled: true">
             
             <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
-            <a-entity mindar-image-target="targetIndex: 0" id="bear-target">
-                <a-box position="0 0 0" scale="0.5 0.5 0.5" material="color: #FFB74D; opacity: 0.8; transparent: true;"></a-box>
+
+            <a-entity mindar-image-target="targetIndex: 0">
+                <a-box position="0 0 0" scale="0.4 0.4 0.4" material="color: #FFB74D; opacity: 0.9;"></a-box>
             </a-entity>
         </a-scene>
     </div>
 
     <script>
-        const startButton = document.getElementById('start-button');
-        const splashScreen = document.getElementById('splash-screen');
-        const sceneEl = document.getElementById('ar-scene');
-        const instructionCard = document.getElementById('instruction-card');
-        const scanOverlay = document.getElementById('scanning-overlay');
+        // Inline Mobile Error Catching Pipeline
+        const logBox = document.getElementById('error-log');
+        function debugLog(msg, isError = false) {
+            logBox.innerHTML += `<br><span style="color:${isError ? '#ff4d4d':'#4af34a'}">${msg}</span>`;
+            logBox.scrollTop = logBox.scrollHeight;
+        }
 
-        startButton.addEventListener('click', () => {
-            // Hide splash screen
-            splashScreen.style.display = 'none';
-            instructionCard.style.display = 'block';
-            scanOverlay.style.display = 'flex';
-            
-            // Manually boot up the AR engine via the user click event
-            const arSystem = sceneEl.systems["mindar-image-system"];
-            arSystem.start(); 
+        window.onerror = function(message, source, lineno, colno, error) {
+            debugLog(`ERR: ${message} (Line ${lineno})`, true);
+            return false;
+        };
+
+        document.getElementById('startBtn').addEventListener('click', async () => {
+            document.getElementById('splash').style.display = 'none';
+            debugLog("Button clicked. Testing device camera hardware access...");
+
+            // Native hardware verification pass
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } });
+                debugLog("Native hardware success! Relinquishing stream to MindAR core...");
+                
+                // Stop temporary track so MindAR engine can bind natively to it
+                stream.getTracks().forEach(track => track.stop());
+
+                const sceneEl = document.getElementById('scene');
+                const arSystem = sceneEl.systems["mindar-image-system"];
+                
+                debugLog("Booting MindAR System...");
+                arSystem.start();
+                debugLog("AR System active. Point camera at bear picture.");
+
+            } catch (err) {
+                debugLog(`CRITICAL STOP: ${err.name} - ${err.message}`, true);
+                if(err.name === "NotAllowedError") {
+                    debugLog("REMEDY: System permissions permanently blocked. You must manually clear browser cookies or site cache to reset browser prompts.", true);
+                }
+            }
         });
-
-        const targetEl = document.querySelector('#bear-target');
-        targetEl.addEventListener("targetFound", () => scanOverlay.style.display = 'none');
-        targetEl.addEventListener("targetLost", () => scanOverlay.style.display = 'flex');
     </script>
 </body>
 </html>
