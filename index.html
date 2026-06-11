@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+    <title>AR Bear Activity</title>
+    
+    <!-- Include A-Frame and MindAR Libraries -->
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/mind-ar-js@1.2.5/dist/mindar-image-aframe.prod.js"></script>
+    
+    <!-- Google Fonts: Fredoka -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            margin: 0;
+            overflow: hidden;
+            background-color: #000;
+            font-family: 'Fredoka', 'Comic Sans MS', sans-serif;
+        }
+
+        /* 16:9 Aspect Ratio Container for Smartboards/Tablets */
+        .game-container {
+            position: relative;
+            width: 100vw;
+            height: 56.25vw; /* 16:9 ratio */
+            max-height: 100vh;
+            max-width: 177.78vh; /* 16:9 ratio */
+            margin: auto;
+            top: 50%;
+            transform: translateY(-50%);
+            overflow: hidden;
+            box-shadow: 0 0 20px rgba(0,0,0,0.5);
+        }
+
+        /* UI Overlay Elements */
+        .ui-overlay {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 10;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 12px 24px;
+            border-radius: 15px;
+            border: 3px solid #4A3728;
+            text-align: center;
+            pointer-events: none;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .ui-overlay h1 {
+            margin: 0;
+            font-size: 24px;
+            color: #4A3728;
+            font-weight: 600;
+        }
+
+        .ui-overlay p {
+            margin: 5px 0 0 0;
+            font-size: 16px;
+            color: #6D523E;
+        }
+
+        /* Scanning overlay styling */
+        #scanning-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.4);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 5;
+            pointer-events: none;
+        }
+
+        .scan-box {
+            width: 60%;
+            height: 70%;
+            border: 4px dashed #FFF;
+            border-radius: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+
+        /* Hide scanner when image is found */
+        .mindar-ui-scanning {
+            display: none !important;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="game-container">
+        
+        <!-- Header Instruction Card -->
+        <div class="ui-overlay">
+            <h1>Look for the Bear!</h1>
+            <p>Scan the waving bear picture to start</p>
+        </div>
+
+        <!-- Custom Scan Guide Box -->
+        <div id="scanning-overlay">
+            <div class="scan-box"></div>
+        </div>
+
+        <!-- AR Scene -->
+        <a-scene 
+            mindar-image="imageTargetSrc: ./targets.mind; uiScanning: #scanning-overlay;" 
+            color-space="sRGB" 
+            renderer="colorManagement: true, physicallyCorrectLights" 
+            vr-mode-ui="enabled: false" 
+            device-orientation-permission-ui="enabled: false"
+            embedded>
+            
+            <a-camera position="0 0 0" look-controls="enabled: false"></a-camera>
+
+            <!-- TargetIndex 0 tracks your compiled "image.png" -->
+            <a-entity mindar-image-target="targetIndex: 0" id="bear-target">
+                
+                <!-- EXAMPLE CONTENT: A 3D Text Greeting -->
+                <!-- You can swap this out for 3D gltf models, interactive planes, or images -->
+                <a-entity 
+                    text="value: Hello, Bear!; align: center; color: #4A3728; font: https://cdn.aframe.io/fonts/Roboto-msdf.json;"
+                    position="0 0.6 0" 
+                    scale="3 3 3">
+                </a-entity>
+
+                <!-- Example Colored Interactive Box -->
+                <a-box 
+                    position="0 0 0" 
+                    scale="0.5 0.5 0.5" 
+                    material="color: #FFB74D; opacity: 0.8; transparent: true;">
+                </a-box>
+
+            </a-entity>
+        </a-scene>
+
+    </div>
+
+    <script>
+        // Optional logic to track when the bear is found or lost
+        const targetEl = document.querySelector('#bear-target');
+        const scanOverlay = document.querySelector('#scanning-overlay');
+
+        targetEl.addEventListener("targetFound", event => {
+            console.log("Bear found! Trigger game logic here.");
+            scanOverlay.style.display = 'none';
+        });
+
+        targetEl.addEventListener("targetLost", event => {
+            console.log("Bear lost.");
+            scanOverlay.style.display = 'flex';
+        });
+    </script>
+</body>
+</html>
